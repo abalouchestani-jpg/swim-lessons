@@ -470,6 +470,13 @@
 
                 <div>
                     <h2>Student Directory</h2>
+
+<input 
+  type="text" 
+  id="searchInput" 
+  placeholder="Search by student, parent, or phone..." 
+  style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;"
+>
                     <div id="studentList" class="space-y-3">
                         <!-- Students will be listed here -->
                     </div>
@@ -1423,6 +1430,34 @@ try {
                 await saveToFirebase('payments', paymentsData);
             }
         }
+        // ============================================
+// LIVE SEARCH FUNCTIONALITY
+// ============================================
+
+const searchInput = document.getElementById('searchInput');
+
+// Listen for every keystroke in the search bar
+searchInput.addEventListener('input', (event) => {
+  // Get the text you typed and make it lowercase
+  const searchTerm = event.target.value.toLowerCase();
+  
+  // Grab all the student cards on the page
+  // (Change '.student-card' if your class is named something else)
+  const allStudents = document.querySelectorAll('.list-item');
+
+  // Loop through each student
+  allStudents.forEach(student => {
+    // Get all the text inside that specific student's card
+    const studentText = student.innerText.toLowerCase();
+
+    // If the card contains the search term, show it. If not, hide it!
+    if (studentText.includes(searchTerm)) {
+      student.style.display = ''; // Shows the element
+    } else {
+      student.style.display = 'none'; // Hides the element
+    }
+  });
+});
     </script>
 </body>
 </html>
