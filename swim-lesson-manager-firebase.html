@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swim Lesson Manager - Cloud Sync</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h1 {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            font-size: 1.125rem;
+            font-weight: bold;
+        }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-700 { color: #374151; }
+        .text-blue-600 { color: #2563eb; }
+        .text-red-500 { color: #ef4444; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .tab:hover {
+            color: #3b82f6;
+        }
+        
+        /* Forms */
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn-secondary {
+            background: #d1d5db;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background: #9ca3af;
+        }
+        .btn-link {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .btn-link:hover {
+            color: #1d4ed8;
+        }
+        .btn-link-red {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .btn-link-red:hover {
+            color: #dc2626;
+        }
+        
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .grid-7 {
+            grid-template-columns: repeat(7, 1fr);
+        }
+        
+        /* Calendar */
+        .calendar-day {
+            min-height: 80px;
+            border: 1px solid #e5e7eb;
+            position: relative;
+            padding: 0.5rem;
+            background: white;
+            cursor: pointer;
+        }
+        .calendar-day:hover {
+            background-color: #f0f9ff !important;
+            border-color: #3b82f6;
+        }
+        .calendar-day:hover::after {
+            content: '+ Add';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.65rem;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .calendar-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 0.5rem;
+        }
+        .calendar-day-today {
+            background: #dbeafe !important;
+            font-weight: bold;
+        }
+        .lesson-dot {
+            width: 100%;
+            font-size: 0.7rem;
+            margin: 1px 0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+        .lesson-dot:hover {
+            background-color: #2563eb !important;
+        }
+        
+        /* List items */
+        .list-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .list-item-gray {
+            background: #f9fafb;
+        }
+        .list-item-blue {
+            background: #eff6ff;
+        }
+        .list-item-green {
+            background: #f0fdf4;
+        }
+        
+        /* Flex utilities */
+        .flex {
+            display: flex;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .flex-center {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .flex-gap {
+            gap: 0.5rem;
+        }
+        .flex-1 {
+            flex: 1;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            max-width: 600px;
+            width: 90%;
+            margin: 1rem;
+        }
+        
+        /* Spacing */
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .ml-4 { margin-left: 1rem; }
+        .p-2 { padding: 0.5rem; }
+        
+        /* Utilities */
+        .hidden { display: none; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .rounded { border-radius: 0.375rem; }
+        .bg-gray-100 { background: #f3f4f6; }
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        
+        a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Auth Screen */
+        #authScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        #authScreen.hidden {
+            display: none;
+        }
+        .auth-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+        .auth-card h2 {
+            margin-bottom: 1.5rem;
+            color: #2563eb;
+            text-align: center;
+        }
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        #appContent {
+            display: none;
+        }
+        #appContent.visible {
+            display: block;
+        }
+        .sync-indicator {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 0.875rem;
+            color: #10b981;
+            display: none;
+        }
+        .sync-indicator.syncing {
+            display: block;
+            color: #3b82f6;
+        }
+        .sync-indicator.synced {
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 1rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Screen -->
+    <div id="authScreen">
+        <div class="auth-card">
+            <h2>🏊‍♀️ Swim Lesson Manager</h2>
+            <div id="authMessage"></div>
+            
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div style="margin-bottom: 1rem;">
+                    <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom: 0.5rem;">
+                    <input type="password" id="loginPassword" placeholder="Password">
+                </div>
+                <button onclick="login()" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
+                    Sign In
+                </button>
+                <p style="text-align: center; color: #6b7280; font-size: 0.875rem; margin: 1rem 0;">
+                    Don't have an account? <a href="#" onclick="showSignup(); return false;" style="color: #2563eb; font-weight: 600;">Sign Up</a>
+                </p>
+            </div>
+            
+            <!-- Signup Form -->
+            <div id="signupForm" class="hidden">
+                <div style="margin-bottom: 1rem;">
+                    <input type="email" id="signupEmail" placeholder="Email" style="margin-bottom: 0.5rem;">
+                    <input type="password" id="signupPassword" placeholder="Password (min 6 characters)" style="margin-bottom: 0.5rem;">
+                    <input type="password" id="signupPasswordConfirm" placeholder="Confirm Password">
+                </div>
+                <button onclick="signup()" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
+                    Create Account
+                </button>
+                <p style="text-align: center; color: #6b7280; font-size: 0.875rem; margin: 1rem 0;">
+                    Already have an account? <a href="#" onclick="showLogin(); return false;" style="color: #2563eb; font-weight: 600;">Sign In</a>
+                </p>
+            </div>
+            
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 0.75rem; color: #6b7280; text-align: center;">
+                    ☁️ Your data syncs across all your devices automatically
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Content -->
+    <div id="appContent">
+    <div class="container">
+        <!-- Header -->
+        <div class="card">
+            <div class="flex-between">
+                <div>
+                    <h1>🏊‍♀️ Swim Lesson Manager</h1>
+                    <p class="text-gray-600">Track your students, schedules, and payments - synced across all devices</p>
+                </div>
+                <div style="text-align: right;">
+                    <p id="userEmail" style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;"></p>
+                    <button onclick="signOut()" class="btn btn-secondary" style="font-size: 0.875rem; padding: 0.375rem 1rem;">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="card" style="padding: 0;">
+            <div class="tabs">
+                <button onclick="switchTab('students')" id="tab-students" class="tab tab-active">
+                    Students & Contacts
+                </button>
+                <button onclick="switchTab('schedule')" id="tab-schedule" class="tab">
+                    Schedule
+                </button>
+                <button onclick="switchTab('payments')" id="tab-payments" class="tab">
+                    Payments
+                </button>
+            </div>
+
+            <!-- Students Tab -->
+            <div id="content-students" style="padding: 1.5rem;">
+                <div class="mb-6">
+                    <h2>Add New Student</h2>
+                    <div class="grid grid-2 mb-4">
+                        <input type="text" id="studentName" placeholder="Student Name">
+                        <input type="number" id="studentAge" placeholder="Age">
+                        <input type="text" id="parentName" placeholder="Parent/Guardian Name">
+                        <input type="tel" id="parentPhone" placeholder="Phone Number">
+                        <input type="email" id="parentEmail" placeholder="Email Address" style="grid-column: span 2;">
+                        <textarea id="notes" placeholder="Notes (allergies, skill level, etc.)" style="grid-column: span 2;" rows="2"></textarea>
+                    </div>
+                    <button onclick="addStudent()" class="btn btn-primary">
+                        Add Student
+                    </button>
+                </div>
+
+                <div>
+                    <h2>Student Directory</h2>
+                    <div id="studentList" class="space-y-3">
+                        <!-- Students will be listed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Tab -->
+            <div id="content-schedule" style="padding: 1.5rem;" class="hidden">
+                <!-- View Toggle -->
+                <div class="flex flex-gap mb-6">
+                    <button onclick="setScheduleView('calendar')" id="view-calendar" class="btn btn-primary">
+                        Calendar View
+                    </button>
+                    <button onclick="setScheduleView('list')" id="view-list" class="btn btn-secondary">
+                        List View
+                    </button>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendarView">
+                    <p class="text-sm text-gray-600 mb-4">💡 <strong>Tip:</strong> Click on any day to add a lesson. Click on existing lessons to edit them.</p>
+                    <div class="flex-center mb-4">
+                        <button onclick="changeMonth(-1)" class="btn btn-secondary">← Prev</button>
+                        <h2 id="calendarMonth"></h2>
+                        <button onclick="changeMonth(1)" class="btn btn-secondary">Next →</button>
+                    </div>
+                    <div class="grid grid-7" style="gap: 0.25rem; margin-bottom: 1.5rem;">
+                        <div class="calendar-header">Sun</div>
+                        <div class="calendar-header">Mon</div>
+                        <div class="calendar-header">Tue</div>
+                        <div class="calendar-header">Wed</div>
+                        <div class="calendar-header">Thu</div>
+                        <div class="calendar-header">Fri</div>
+                        <div class="calendar-header">Sat</div>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-7" style="gap: 0.25rem;">
+                        <!-- Calendar days will be generated here -->
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div id="listView" class="hidden">
+                    <div class="mb-6">
+                        <h2>Add Lesson</h2>
+                        <div class="grid grid-2 mb-4">
+                            <select id="scheduleStudent">
+                                <option value="">Select Student</option>
+                            </select>
+                            <input type="date" id="lessonDate">
+                            <input type="time" id="lessonTime">
+                            <input type="number" id="lessonDuration" placeholder="Duration (minutes)" value="30">
+                            <select id="lessonType">
+                                <option value="Individual">Individual</option>
+                                <option value="Group">Group</option>
+                                <option value="Semi-Private">Semi-Private</option>
+                            </select>
+                            <select id="lessonRecurring">
+                                <option value="One-time">One-time</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Bi-weekly">Bi-weekly</option>
+                            </select>
+                        </div>
+                        <button onclick="addLesson()" class="btn btn-primary">
+                            Add to Schedule
+                        </button>
+                    </div>
+
+                    <div>
+                        <h2>Upcoming Lessons</h2>
+                        <div id="scheduleList" class="space-y-3">
+                            <!-- Schedule will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payments Tab -->
+            <div id="content-payments" style="padding: 1.5rem;" class="hidden">
+                <div class="mb-6">
+                    <h2>Record Payment</h2>
+                    <div class="grid grid-2 mb-4">
+                        <select id="paymentStudent">
+                            <option value="">Select Student</option>
+                        </select>
+                        <input type="number" id="paymentAmount" placeholder="Amount ($)">
+                        <input type="date" id="paymentDate">
+                        <select id="paymentMethod">
+                            <option value="Cash">Cash</option>
+                            <option value="Check">Check</option>
+                            <option value="Venmo">Venmo</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Card">Card</option>
+                        </select>
+                        <input type="text" id="paymentFor" placeholder="Payment for (e.g., 4 lessons)" style="grid-column: span 2;">
+                    </div>
+                    <button onclick="addPayment()" class="btn btn-success">
+                        Record Payment
+                    </button>
+                </div>
+
+                <div>
+                    <h2>Payment History</h2>
+                    <div id="paymentList" class="space-y-3">
+                        <!-- Payments will be listed here -->
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem; background: #eff6ff; padding: 1rem; border-radius: 0.375rem;">
+                    <h3 class="mb-2">Total Revenue</h3>
+                    <p id="totalRevenue" style="font-size: 1.5rem; font-weight: bold; color: #2563eb;">$0.00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    
+    <!-- Sync Indicator -->
+    <div id="syncIndicator" class="sync-indicator">
+        ✓ Synced
+    </div>
+
+    <!-- Modals -->
+    <!-- Edit Student Modal -->
+    <div id="editStudentModal" class="modal">
+        <div class="modal-content">
+            <h2 class="mb-4">Edit Student</h2>
+            <input type="hidden" id="editStudentId">
+            <div class="grid grid-2 mb-4">
+                <input type="text" id="editStudentName" placeholder="Student Name">
+                <input type="number" id="editStudentAge" placeholder="Age">
+                <input type="text" id="editParentName" placeholder="Parent/Guardian Name">
+                <input type="tel" id="editParentPhone" placeholder="Phone Number">
+                <input type="email" id="editParentEmail" placeholder="Email Address" style="grid-column: span 2;">
+                <textarea id="editNotes" placeholder="Notes" style="grid-column: span 2;" rows="2"></textarea>
+            </div>
+            <div class="flex flex-gap">
+                <button onclick="saveStudentEdit()" class="btn btn-primary">
+                    Save Changes
+                </button>
+                <button onclick="closeModal('editStudentModal')" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Lesson Modal -->
+    <div id="editLessonModal" class="modal">
+        <div class="modal-content">
+            <h2 class="mb-4">Edit Lesson</h2>
+            <input type="hidden" id="editLessonId">
+            <div class="grid grid-2 mb-4">
+                <select id="editScheduleStudent">
+                    <option value="">Select Student</option>
+                </select>
+                <input type="date" id="editLessonDate">
+                <input type="time" id="editLessonTime">
+                <input type="number" id="editLessonDuration" placeholder="Duration (minutes)">
+                <select id="editLessonType">
+                    <option value="Individual">Individual</option>
+                    <option value="Group">Group</option>
+                    <option value="Semi-Private">Semi-Private</option>
+                </select>
+                <select id="editLessonRecurring">
+                    <option value="One-time">One-time</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Bi-weekly">Bi-weekly</option>
+                </select>
+            </div>
+            <div class="flex flex-gap">
+                <button onclick="saveLessonEdit()" class="btn btn-primary">
+                    Save Changes
+                </button>
+                <button onclick="closeModal('editLessonModal')" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Lesson Modal (from Calendar) -->
+    <div id="addLessonModal" class="modal">
+        <div class="modal-content">
+            <h2 class="mb-4">Add Lesson - <span id="addLessonDateDisplay"></span></h2>
+            <input type="hidden" id="addLessonDateHidden">
+            <div class="grid grid-2 mb-4">
+                <select id="addScheduleStudent">
+                    <option value="">Select Student</option>
+                </select>
+                <input type="time" id="addLessonTime" placeholder="Time">
+                <input type="number" id="addLessonDuration" placeholder="Duration (minutes)" value="30">
+                <select id="addLessonType">
+                    <option value="Individual">Individual</option>
+                    <option value="Group">Group</option>
+                    <option value="Semi-Private">Semi-Private</option>
+                </select>
+                <select id="addLessonRecurring" style="grid-column: span 2;">
+                    <option value="One-time">One-time</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Bi-weekly">Bi-weekly</option>
+                </select>
+            </div>
+            <div class="flex flex-gap">
+                <button onclick="saveLessonFromCalendar()" class="btn btn-primary">
+                    Add Lesson
+                </button>
+                <button onclick="closeModal('addLessonModal')" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Payment Modal -->
+    <div id="editPaymentModal" class="modal">
+        <div class="modal-content">
+            <h2 class="mb-4">Edit Payment</h2>
+            <input type="hidden" id="editPaymentId">
+            <div class="grid grid-2 mb-4">
+                <select id="editPaymentStudent">
+                    <option value="">Select Student</option>
+                </select>
+                <input type="number" id="editPaymentAmount" placeholder="Amount ($)">
+                <input type="date" id="editPaymentDate">
+                <select id="editPaymentMethod">
+                    <option value="Cash">Cash</option>
+                    <option value="Check">Check</option>
+                    <option value="Venmo">Venmo</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="Card">Card</option>
+                </select>
+                <input type="text" id="editPaymentFor" placeholder="Payment for" style="grid-column: span 2;">
+            </div>
+            <div class="flex flex-gap">
+                <button onclick="savePaymentEdit()" class="btn btn-success">
+                    Save Changes
+                </button>
+                <button onclick="closeModal('editPaymentModal')" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        // TODO: Replace this with your own Firebase config
+        // Get this from Firebase Console > Project Settings > Your apps
+        // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBLlv9X0O5XAmlJInO4WfeirULVw-ge-QQ",
+  authDomain: "swim-lessons-81cc7.firebaseapp.com",
+  projectId: "swim-lessons-81cc7",
+  storageBucket: "swim-lessons-81cc7.firebasestorage.app",
+  messagingSenderId: "68011255757",
+  appId: "1:68011255757:web:2127bb91d5979e85c40684"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+        // Initialize Firebase
+        let app, auth, database, currentUser;
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            database = firebase.database();
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            alert("Firebase configuration error. Please check your setup.");
+        }
+
+        // ============================================
+        // AUTHENTICATION FUNCTIONS
+        // ============================================
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+            clearAuthMessage();
+        }
+
+        function showSignup() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+            clearAuthMessage();
+        }
+
+        function showAuthMessage(message, isError = false) {
+            const msgDiv = document.getElementById('authMessage');
+            msgDiv.innerHTML = `<div class="${isError ? 'error-message' : 'success-message'}">${message}</div>`;
+        }
+
+        function clearAuthMessage() {
+            document.getElementById('authMessage').innerHTML = '';
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showAuthMessage('Please enter email and password', true);
+                return;
+            }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                showAuthMessage(getErrorMessage(error.code), true);
+            }
+        }
+
+        async function signup() {
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupPasswordConfirm').value;
+
+            if (!email || !password) {
+                showAuthMessage('Please enter email and password', true);
+                return;
+            }
+
+            if (password.length < 6) {
+                showAuthMessage('Password must be at least 6 characters', true);
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAuthMessage('Passwords do not match', true);
+                return;
+            }
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                showAuthMessage('Account created successfully!', false);
+            } catch (error) {
+                showAuthMessage(getErrorMessage(error.code), true);
+            }
+        }
+
+        function signOut() {
+            if (confirm('Are you sure you want to sign out?')) {
+                auth.signOut();
+            }
+        }
+
+        function getErrorMessage(errorCode) {
+            switch (errorCode) {
+                case 'auth/email-already-in-use':
+                    return 'Email is already registered. Please sign in.';
+                case 'auth/invalid-email':
+                    return 'Invalid email address.';
+                case 'auth/user-not-found':
+                    return 'No account found with this email.';
+                case 'auth/wrong-password':
+                    return 'Incorrect password.';
+                case 'auth/weak-password':
+                    return 'Password should be at least 6 characters.';
+                default:
+                    return 'An error occurred. Please try again.';
+            }
+        }
+
+        // ============================================
+        // DATA MANAGEMENT
+        // ============================================
+        let students = [];
+        let schedule = [];
+        let payments = [];
+        let currentMonth = new Date();
+        let scheduleView = 'calendar';
+        let dataListeners = [];
+
+        // Monitor authentication state
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('appContent').classList.add('visible');
+                document.getElementById('userEmail').textContent = user.email;
+                initializeApp();
+            } else {
+                currentUser = null;
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('appContent').classList.remove('visible');
+                dataListeners.forEach(listener => listener());
+                dataListeners = [];
+            }
+        });
+
+        function initializeApp() {
+            setupDataListeners();
+            updateStudentDropdowns();
+            renderCalendar();
+            
+            document.getElementById('lessonDate').valueAsDate = new Date();
+            document.getElementById('paymentDate').valueAsDate = new Date();
+        }
+
+        function setupDataListeners() {
+            const userId = currentUser.uid;
+
+            // Students
+            const studentsRef = database.ref(`users/${userId}/students`);
+            const studentsListener = studentsRef.on('value', snapshot => {
+                students = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        students.push({ ...child.val(), id: parseInt(child.key) });
+                    });
+                }
+                renderStudents();
+                updateStudentDropdowns();
+                renderSchedule();
+                renderCalendar();
+            });
+            dataListeners.push(() => studentsRef.off('value', studentsListener));
+
+            // Schedule
+            const scheduleRef = database.ref(`users/${userId}/schedule`);
+            const scheduleListener = scheduleRef.on('value', snapshot => {
+                schedule = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        schedule.push({ ...child.val(), id: parseInt(child.key) });
+                    });
+                }
+                renderSchedule();
+                renderCalendar();
+            });
+            dataListeners.push(() => scheduleRef.off('value', scheduleListener));
+
+            // Payments
+            const paymentsRef = database.ref(`users/${userId}/payments`);
+            const paymentsListener = paymentsRef.on('value', snapshot => {
+                payments = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach(child => {
+                        payments.push({ ...child.val(), id: parseInt(child.key) });
+                    });
+                }
+                renderPayments();
+            });
+            dataListeners.push(() => paymentsRef.off('value', paymentsListener));
+        }
+
+        function showSyncIndicator(syncing = false) {
+            const indicator = document.getElementById('syncIndicator');
+            if (syncing) {
+                indicator.textContent = '⟳ Syncing...';
+                indicator.className = 'sync-indicator syncing';
+            } else {
+                indicator.textContent = '✓ Synced';
+                indicator.className = 'sync-indicator synced';
+                setTimeout(() => {
+                    indicator.className = 'sync-indicator';
+                }, 2000);
+            }
+        }
+
+        async function saveToFirebase(path, data) {
+            showSyncIndicator(true);
+            try {
+                await database.ref(`users/${currentUser.uid}/${path}`).set(data);
+                showSyncIndicator(false);
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+                alert('Error syncing data. Please check your connection.');
+            }
+        }
+
+        // ============================================
+        // UI FUNCTIONS
+        // ============================================
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['students', 'schedule', 'payments'];
+            tabs.forEach(tab => {
+                const content = document.getElementById('content-' + tab);
+                const tabBtn = document.getElementById('tab-' + tab);
+                
+                if (tab === tabName) {
+                    content.classList.remove('hidden');
+                    tabBtn.classList.add('tab-active');
+                } else {
+                    content.classList.add('hidden');
+                    tabBtn.classList.remove('tab-active');
+                }
+            });
+        }
+
+        function setScheduleView(view) {
+            scheduleView = view;
+            if (view === 'calendar') {
+                document.getElementById('calendarView').classList.remove('hidden');
+                document.getElementById('listView').classList.add('hidden');
+                document.getElementById('view-calendar').className = 'btn btn-primary';
+                document.getElementById('view-list').className = 'btn btn-secondary';
+                renderCalendar();
+            } else {
+                document.getElementById('calendarView').classList.add('hidden');
+                document.getElementById('listView').classList.remove('hidden');
+                document.getElementById('view-list').className = 'btn btn-primary';
+                document.getElementById('view-calendar').className = 'btn btn-secondary';
+                renderSchedule();
+            }
+        }
+
+        function changeMonth(delta) {
+            currentMonth.setMonth(currentMonth.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            
+            document.getElementById('calendarMonth').textContent = 
+                currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day bg-gray-100';
+                grid.appendChild(emptyDay);
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayLessons = schedule.filter(l => l.date === dateStr);
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                
+                const today = new Date();
+                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                    dayCell.classList.add('calendar-day-today');
+                }
+                
+                let dayHTML = `<div class="text-center mb-1" onclick="openAddLessonModal('${dateStr}')">${day}</div>`;
+                
+                dayLessons.sort((a, b) => a.time.localeCompare(b.time)).forEach(lesson => {
+                    const student = students.find(s => s.id === lesson.studentId);
+                    if (student) {
+                        dayHTML += `<div class="lesson-dot" onclick="event.stopPropagation(); editLesson(${lesson.id})" title="${student.name} at ${lesson.time}">
+                            ${lesson.time} ${student.name}
+                        </div>`;
+                    }
+                });
+                
+                dayCell.innerHTML = dayHTML;
+                dayCell.addEventListener('click', function(e) {
+                    if (e.target === dayCell) {
+                        openAddLessonModal(dateStr);
+                    }
+                });
+                grid.appendChild(dayCell);
+            }
+        }
+
+        function openAddLessonModal(dateStr) {
+            if (students.length === 0) {
+                alert('Please add at least one student before scheduling lessons');
+                return;
+            }
+            
+            const date = new Date(dateStr);
+            document.getElementById('addLessonDateHidden').value = dateStr;
+            document.getElementById('addLessonDateDisplay').textContent = 
+                date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            
+            document.getElementById('addScheduleStudent').value = '';
+            document.getElementById('addLessonTime').value = '';
+            document.getElementById('addLessonDuration').value = '30';
+            document.getElementById('addLessonType').value = 'Individual';
+            document.getElementById('addLessonRecurring').value = 'One-time';
+            
+            openModal('addLessonModal');
+        }
+
+        async function saveLessonFromCalendar() {
+            const studentId = document.getElementById('addScheduleStudent').value;
+            const lesson = {
+                id: Date.now(),
+                studentId: parseInt(studentId),
+                date: document.getElementById('addLessonDateHidden').value,
+                time: document.getElementById('addLessonTime').value,
+                duration: document.getElementById('addLessonDuration').value,
+                type: document.getElementById('addLessonType').value,
+                recurring: document.getElementById('addLessonRecurring').value
+            };
+
+            if (!lesson.studentId || !lesson.time) {
+                alert('Please select a student and enter a time');
+                return;
+            }
+
+            schedule.push(lesson);
+            const scheduleData = {};
+            schedule.forEach(item => { scheduleData[item.id] = item; });
+            await saveToFirebase('schedule', scheduleData);
+            closeModal('addLessonModal');
+        }
+
+        // ============================================
+        // STUDENT FUNCTIONS
+        // ============================================
+        async function addStudent() {
+            const student = {
+                id: Date.now(),
+                name: document.getElementById('studentName').value,
+                age: document.getElementById('studentAge').value,
+                parentName: document.getElementById('parentName').value,
+                parentPhone: document.getElementById('parentPhone').value,
+                parentEmail: document.getElementById('parentEmail').value,
+                notes: document.getElementById('notes').value
+            };
+
+            if (!student.name || !student.parentName) {
+                alert('Please enter at least student name and parent name');
+                return;
+            }
+
+            students.push(student);
+            const studentsData = {};
+            students.forEach(item => { studentsData[item.id] = item; });
+            await saveToFirebase('students', studentsData);
+            
+            document.getElementById('studentName').value = '';
+            document.getElementById('studentAge').value = '';
+            document.getElementById('parentName').value = '';
+            document.getElementById('parentPhone').value = '';
+            document.getElementById('parentEmail').value = '';
+            document.getElementById('notes').value = '';
+        }
+
+        function editStudent(id) {
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+            
+            document.getElementById('editStudentId').value = student.id;
+            document.getElementById('editStudentName').value = student.name;
+            document.getElementById('editStudentAge').value = student.age || '';
+            document.getElementById('editParentName').value = student.parentName;
+            document.getElementById('editParentPhone').value = student.parentPhone || '';
+            document.getElementById('editParentEmail').value = student.parentEmail || '';
+            document.getElementById('editNotes').value = student.notes || '';
+            
+            openModal('editStudentModal');
+        }
+
+        async function saveStudentEdit() {
+            const id = parseInt(document.getElementById('editStudentId').value);
+            const student = students.find(s => s.id === id);
+            
+            if (!student) return;
+            
+            student.name = document.getElementById('editStudentName').value;
+            student.age = document.getElementById('editStudentAge').value;
+            student.parentName = document.getElementById('editParentName').value;
+            student.parentPhone = document.getElementById('editParentPhone').value;
+            student.parentEmail = document.getElementById('editParentEmail').value;
+            student.notes = document.getElementById('editNotes').value;
+            
+            const studentsData = {};
+            students.forEach(item => { studentsData[item.id] = item; });
+            await saveToFirebase('students', studentsData);
+            closeModal('editStudentModal');
+        }
+
+        function renderStudents() {
+            const list = document.getElementById('studentList');
+            if (students.length === 0) {
+                list.innerHTML = '<p class="text-gray-600">No students added yet</p>';
+                return;
+            }
+
+            list.innerHTML = students.map(student => `
+                <div class="list-item list-item-gray">
+                    <div class="flex-between">
+                        <div class="flex-1">
+                            <h3>${student.name} ${student.age ? `(${student.age} years old)` : ''}</h3>
+                            <p class="text-gray-700"><strong>Parent:</strong> ${student.parentName}</p>
+                            ${student.parentPhone ? `<p class="text-gray-700"><strong>Phone:</strong> <a href="tel:${student.parentPhone}">${student.parentPhone}</a></p>` : ''}
+                            ${student.parentEmail ? `<p class="text-gray-700"><strong>Email:</strong> <a href="mailto:${student.parentEmail}">${student.parentEmail}</a></p>` : ''}
+                            ${student.notes ? `<p class="text-gray-600 mt-2 text-sm"><strong>Notes:</strong> ${student.notes}</p>` : ''}
+                        </div>
+                        <div class="flex flex-gap ml-4">
+                            <button onclick="editStudent(${student.id})" class="btn-link">Edit</button>
+                            <button onclick="deleteStudent(${student.id})" class="btn-link-red">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteStudent(id) {
+            if (confirm('Are you sure you want to delete this student? This will also delete all their lessons and payment records.')) {
+                students = students.filter(s => s.id !== id);
+                schedule = schedule.filter(l => l.studentId !== id);
+                payments = payments.filter(p => p.studentId !== id);
+                
+                const studentsData = {};
+                students.forEach(item => { studentsData[item.id] = item; });
+                const scheduleData = {};
+                schedule.forEach(item => { scheduleData[item.id] = item; });
+                const paymentsData = {};
+                payments.forEach(item => { paymentsData[item.id] = item; });
+                
+                await saveToFirebase('students', studentsData);
+                await saveToFirebase('schedule', scheduleData);
+                await saveToFirebase('payments', paymentsData);
+            }
+        }
+
+        function updateStudentDropdowns() {
+            const options = '<option value="">Select Student</option>' + 
+                students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            
+            document.getElementById('scheduleStudent').innerHTML = options;
+            document.getElementById('paymentStudent').innerHTML = options;
+            document.getElementById('editScheduleStudent').innerHTML = options;
+            document.getElementById('editPaymentStudent').innerHTML = options;
+            document.getElementById('addScheduleStudent').innerHTML = options;
+        }
+
+        // ============================================
+        // SCHEDULE FUNCTIONS
+        // ============================================
+        async function addLesson() {
+            const studentId = document.getElementById('scheduleStudent').value;
+            const lesson = {
+                id: Date.now(),
+                studentId: parseInt(studentId),
+                date: document.getElementById('lessonDate').value,
+                time: document.getElementById('lessonTime').value,
+                duration: document.getElementById('lessonDuration').value,
+                type: document.getElementById('lessonType').value,
+                recurring: document.getElementById('lessonRecurring').value
+            };
+
+            if (!lesson.studentId || !lesson.date || !lesson.time) {
+                alert('Please fill in student, date, and time');
+                return;
+            }
+
+            schedule.push(lesson);
+            const scheduleData = {};
+            schedule.forEach(item => { scheduleData[item.id] = item; });
+            await saveToFirebase('schedule', scheduleData);
+            
+            document.getElementById('lessonTime').value = '';
+        }
+
+        function editLesson(id) {
+            const lesson = schedule.find(l => l.id === id);
+            if (!lesson) return;
+            
+            document.getElementById('editLessonId').value = lesson.id;
+            document.getElementById('editScheduleStudent').value = lesson.studentId;
+            document.getElementById('editLessonDate').value = lesson.date;
+            document.getElementById('editLessonTime').value = lesson.time;
+            document.getElementById('editLessonDuration').value = lesson.duration;
+            document.getElementById('editLessonType').value = lesson.type;
+            document.getElementById('editLessonRecurring').value = lesson.recurring;
+            
+            openModal('editLessonModal');
+        }
+
+        async function saveLessonEdit() {
+            const id = parseInt(document.getElementById('editLessonId').value);
+            const lesson = schedule.find(l => l.id === id);
+            
+            if (!lesson) return;
+            
+            lesson.studentId = parseInt(document.getElementById('editScheduleStudent').value);
+            lesson.date = document.getElementById('editLessonDate').value;
+            lesson.time = document.getElementById('editLessonTime').value;
+            lesson.duration = document.getElementById('editLessonDuration').value;
+            lesson.type = document.getElementById('editLessonType').value;
+            lesson.recurring = document.getElementById('editLessonRecurring').value;
+            
+            const scheduleData = {};
+            schedule.forEach(item => { scheduleData[item.id] = item; });
+            await saveToFirebase('schedule', scheduleData);
+            closeModal('editLessonModal');
+        }
+
+        function renderSchedule() {
+            const list = document.getElementById('scheduleList');
+            if (schedule.length === 0) {
+                list.innerHTML = '<p class="text-gray-600">No lessons scheduled yet</p>';
+                return;
+            }
+
+            const sortedSchedule = [...schedule].sort((a, b) => {
+                const dateA = new Date(a.date + ' ' + a.time);
+                const dateB = new Date(b.date + ' ' + b.time);
+                return dateA - dateB;
+            });
+
+            list.innerHTML = sortedSchedule.map(lesson => {
+                const student = students.find(s => s.id === lesson.studentId);
+                const lessonDate = new Date(lesson.date);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const isPast = lessonDate < today;
+                
+                return `
+                    <div class="list-item ${isPast ? 'list-item-gray' : 'list-item-blue'}">
+                        <div class="flex-between">
+                            <div class="flex-1">
+                                <h3>${student ? student.name : 'Unknown Student'}</h3>
+                                <p class="text-gray-700">${new Date(lesson.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${lesson.time}</p>
+                                <p class="text-gray-600 text-sm">${lesson.duration} min • ${lesson.type} • ${lesson.recurring}</p>
+                                ${student && student.parentPhone ? `<p class="text-sm text-gray-600 mt-1">Contact: ${student.parentPhone}</p>` : ''}
+                            </div>
+                            <div class="flex flex-gap ml-4">
+                                <button onclick="editLesson(${lesson.id})" class="btn-link">Edit</button>
+                                <button onclick="deleteLesson(${lesson.id})" class="btn-link-red">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function deleteLesson(id) {
+            if (confirm('Are you sure you want to delete this lesson?')) {
+                schedule = schedule.filter(l => l.id !== id);
+                const scheduleData = {};
+                schedule.forEach(item => { scheduleData[item.id] = item; });
+                await saveToFirebase('schedule', scheduleData);
+            }
+        }
+
+        // ============================================
+        // PAYMENT FUNCTIONS
+        // ============================================
+        async function addPayment() {
+            const studentId = document.getElementById('paymentStudent').value;
+            const payment = {
+                id: Date.now(),
+                studentId: parseInt(studentId),
+                amount: parseFloat(document.getElementById('paymentAmount').value),
+                date: document.getElementById('paymentDate').value,
+                method: document.getElementById('paymentMethod').value,
+                description: document.getElementById('paymentFor').value
+            };
+
+            if (!payment.studentId || !payment.amount || !payment.date) {
+                alert('Please fill in student, amount, and date');
+                return;
+            }
+
+            payments.push(payment);
+            const paymentsData = {};
+            payments.forEach(item => { paymentsData[item.id] = item; });
+            await saveToFirebase('payments', paymentsData);
+            
+            document.getElementById('paymentAmount').value = '';
+            document.getElementById('paymentFor').value = '';
+        }
+
+        function editPayment(id) {
+            const payment = payments.find(p => p.id === id);
+            if (!payment) return;
+            
+            document.getElementById('editPaymentId').value = payment.id;
+            document.getElementById('editPaymentStudent').value = payment.studentId;
+            document.getElementById('editPaymentAmount').value = payment.amount;
+            document.getElementById('editPaymentDate').value = payment.date;
+            document.getElementById('editPaymentMethod').value = payment.method;
+            document.getElementById('editPaymentFor').value = payment.description || '';
+            
+            openModal('editPaymentModal');
+        }
+
+        async function savePaymentEdit() {
+            const id = parseInt(document.getElementById('editPaymentId').value);
+            const payment = payments.find(p => p.id === id);
+            
+            if (!payment) return;
+            
+            payment.studentId = parseInt(document.getElementById('editPaymentStudent').value);
+            payment.amount = parseFloat(document.getElementById('editPaymentAmount').value);
+            payment.date = document.getElementById('editPaymentDate').value;
+            payment.method = document.getElementById('editPaymentMethod').value;
+            payment.description = document.getElementById('editPaymentFor').value;
+            
+            const paymentsData = {};
+            payments.forEach(item => { paymentsData[item.id] = item; });
+            await saveToFirebase('payments', paymentsData);
+            closeModal('editPaymentModal');
+        }
+
+        function renderPayments() {
+            const list = document.getElementById('paymentList');
+            if (payments.length === 0) {
+                list.innerHTML = '<p class="text-gray-600">No payments recorded yet</p>';
+                return;
+            }
+
+            const sortedPayments = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            list.innerHTML = sortedPayments.map(payment => {
+                const student = students.find(s => s.id === payment.studentId);
+                return `
+                    <div class="list-item list-item-green">
+                        <div class="flex-between">
+                            <div class="flex-1">
+                                <h3>${student ? student.name : 'Unknown Student'} - $${payment.amount.toFixed(2)}</h3>
+                                <p class="text-gray-700">${new Date(payment.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${payment.method}</p>
+                                ${payment.description ? `<p class="text-gray-600 text-sm">${payment.description}</p>` : ''}
+                            </div>
+                            <div class="flex flex-gap ml-4">
+                                <button onclick="editPayment(${payment.id})" class="btn-link">Edit</button>
+                                <button onclick="deletePayment(${payment.id})" class="btn-link-red">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const total = payments.reduce((sum, p) => sum + p.amount, 0);
+            document.getElementById('totalRevenue').textContent = '$' + total.toFixed(2);
+        }
+
+        async function deletePayment(id) {
+            if (confirm('Are you sure you want to delete this payment?')) {
+                payments = payments.filter(p => p.id !== id);
+                const paymentsData = {};
+                payments.forEach(item => { paymentsData[item.id] = item; });
+                await saveToFirebase('payments', paymentsData);
+            }
+        }
+    </script>
+</body>
+</html>
