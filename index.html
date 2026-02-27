@@ -538,6 +538,11 @@
                                 <option value="Group">Group</option>
                                 <option value="Semi-Private">Semi-Private</option>
                             </select>
+                            <select id="lessonLocation">
+                                <option value="">Select Location</option>
+                                <option value="Client's Home">Client's Home</option>
+                                <option value="Coomb's Home">Coomb's Home</option>
+                            </select>
                             <select id="lessonRecurring">
                                 <option value="One-time">One-time</option>
                                 <option value="Weekly">Weekly</option>
@@ -645,6 +650,11 @@
                     <option value="Group">Group</option>
                     <option value="Semi-Private">Semi-Private</option>
                 </select>
+                <select id="editLessonLocation">
+                    <option value="">Select Location</option>
+                    <option value="Client's Home">Client's Home</option>
+                    <option value="Coomb's Home">Coomb's Home</option>
+                </select>
                 <select id="editLessonRecurring">
                     <option value="One-time">One-time</option>
                     <option value="Weekly">Weekly</option>
@@ -678,7 +688,12 @@
                     <option value="Group">Group</option>
                     <option value="Semi-Private">Semi-Private</option>
                 </select>
-                <select id="addLessonRecurring" style="grid-column: span 2;">
+                <select id="addLessonLocation">
+                    <option value="">Select Location</option>
+                    <option value="Client's Home">Client's Home</option>
+                    <option value="Coomb's Home">Coomb's Home</option>
+                </select>
+                <select id="addLessonRecurring">
                     <option value="One-time">One-time</option>
                     <option value="Weekly">Weekly</option>
                     <option value="Bi-weekly">Bi-weekly</option>
@@ -1043,7 +1058,8 @@ try {
                 dayLessons.sort((a, b) => a.time.localeCompare(b.time)).forEach(lesson => {
                     const student = students.find(s => s.id === lesson.studentId);
                     if (student) {
-                        dayHTML += `<div class="lesson-dot" onclick="event.stopPropagation(); editLesson(${lesson.id})" title="${student.name} at ${lesson.time}">
+                        const tooltipText = `${student.name} at ${lesson.time}${lesson.location ? ' - ' + lesson.location : ''}`;
+                        dayHTML += `<div class="lesson-dot" onclick="event.stopPropagation(); editLesson(${lesson.id})" title="${tooltipText}">
                             ${lesson.time} ${student.name}
                         </div>`;
                     }
@@ -1074,6 +1090,7 @@ try {
             document.getElementById('addLessonTime').value = '';
             document.getElementById('addLessonDuration').value = '30';
             document.getElementById('addLessonType').value = 'Individual';
+            document.getElementById('addLessonLocation').value = '';
             document.getElementById('addLessonRecurring').value = 'One-time';
             
             openModal('addLessonModal');
@@ -1088,6 +1105,7 @@ try {
                 time: document.getElementById('addLessonTime').value,
                 duration: document.getElementById('addLessonDuration').value,
                 type: document.getElementById('addLessonType').value,
+                location: document.getElementById('addLessonLocation').value,
                 recurring: document.getElementById('addLessonRecurring').value
             };
 
@@ -1237,6 +1255,7 @@ try {
                 time: document.getElementById('lessonTime').value,
                 duration: document.getElementById('lessonDuration').value,
                 type: document.getElementById('lessonType').value,
+                location: document.getElementById('lessonLocation').value,
                 recurring: document.getElementById('lessonRecurring').value
             };
 
@@ -1263,6 +1282,7 @@ try {
             document.getElementById('editLessonTime').value = lesson.time;
             document.getElementById('editLessonDuration').value = lesson.duration;
             document.getElementById('editLessonType').value = lesson.type;
+            document.getElementById('editLessonLocation').value = lesson.location || '';
             document.getElementById('editLessonRecurring').value = lesson.recurring;
             
             openModal('editLessonModal');
@@ -1279,6 +1299,7 @@ try {
             lesson.time = document.getElementById('editLessonTime').value;
             lesson.duration = document.getElementById('editLessonDuration').value;
             lesson.type = document.getElementById('editLessonType').value;
+            lesson.location = document.getElementById('editLessonLocation').value;
             lesson.recurring = document.getElementById('editLessonRecurring').value;
             
             const scheduleData = {};
@@ -1313,7 +1334,7 @@ try {
                             <div class="flex-1">
                                 <h3>${student ? student.name : 'Unknown Student'}</h3>
                                 <p class="text-gray-700">${new Date(lesson.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${lesson.time}</p>
-                                <p class="text-gray-600 text-sm">${lesson.duration} min • ${lesson.type} • ${lesson.recurring}</p>
+                                <p class="text-gray-600 text-sm">${lesson.duration} min • ${lesson.type} • ${lesson.recurring}${lesson.location ? ` • ${lesson.location}` : ''}</p>
                                 ${student && student.parentPhone ? `<p class="text-sm text-gray-600 mt-1">Contact: ${student.parentPhone}</p>` : ''}
                             </div>
                             <div class="flex flex-gap ml-4">
