@@ -1200,7 +1200,7 @@ try {
                         <div class="flex-1">
                             <h3>${student.name} ${student.age ? `(${student.age} years old)` : ''}</h3>
                             <p class="text-gray-700"><strong>Parent:</strong> ${student.parentName}</p>
-                            ${student.parentPhone ? `<p class="text-gray-700"><strong>Phone:</strong> <a href="tel:${student.parentPhone}">${student.parentPhone}</a></p>` : ''}
+                            ${student.parentPhone ? `<p class="text-gray-700"><strong>Phone:</strong> <a href="sms:${student.parentPhone}">${student.parentPhone}</a></p>` : ''}
                             ${student.parentEmail ? `<p class="text-gray-700"><strong>Email:</strong> <a href="mailto:${student.parentEmail}">${student.parentEmail}</a></p>` : ''}
                             ${student.notes ? `<p class="text-gray-600 mt-2 text-sm"><strong>Notes:</strong> ${student.notes}</p>` : ''}
                         </div>
@@ -1340,7 +1340,7 @@ try {
                                 <h3>${student ? student.name : 'Unknown Student'}</h3>
                                 <p class="text-gray-700">${lessonDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${lesson.time}</p>
                                 <p class="text-gray-600 text-sm">${lesson.duration} min • ${lesson.type} • ${lesson.recurring}${lesson.location ? ` • ${lesson.location}` : ''}</p>
-                                ${student && student.parentPhone ? `<p class="text-sm text-gray-600 mt-1">Contact: ${student.parentPhone}</p>` : ''}
+                                ${student && student.parentPhone ? `<p class="text-sm text-gray-600 mt-1">Contact: <a href="sms:${student.parentPhone}">${student.parentPhone}</a></p>` : ''}
                             </div>
                             <div class="flex flex-gap ml-4">
                                 <button onclick="editLesson(${lesson.id})" class="btn-link">Edit</button>
