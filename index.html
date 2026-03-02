@@ -541,7 +541,7 @@
                             <select id="lessonLocation">
                                 <option value="">Select Location</option>
                                 <option value="Client's Home">Client's Home</option>
-                                <option value="Coombs' Home">Coombs' Home</option>
+                                <option value="Coomb's Home">Coomb's Home</option>
                             </select>
                             <select id="lessonRecurring">
                                 <option value="One-time">One-time</option>
@@ -653,7 +653,7 @@
                 <select id="editLessonLocation">
                     <option value="">Select Location</option>
                     <option value="Client's Home">Client's Home</option>
-                    <option value="Coombs' Home">Coombs' Home</option>
+                    <option value="Coomb's Home">Coomb's Home</option>
                 </select>
                 <select id="editLessonRecurring">
                     <option value="One-time">One-time</option>
@@ -691,7 +691,7 @@
                 <select id="addLessonLocation">
                     <option value="">Select Location</option>
                     <option value="Client's Home">Client's Home</option>
-                    <option value="Coombs' Home">Coombs' Home</option>
+                    <option value="Coomb's Home">Coomb's Home</option>
                 </select>
                 <select id="addLessonRecurring">
                     <option value="One-time">One-time</option>
@@ -1316,14 +1316,19 @@ try {
             }
 
             const sortedSchedule = [...schedule].sort((a, b) => {
-                const dateA = new Date(a.date + ' ' + a.time);
-                const dateB = new Date(b.date + ' ' + b.time);
+                // Parse dates in local timezone
+                const [yearA, monthA, dayA] = a.date.split('-');
+                const [yearB, monthB, dayB] = b.date.split('-');
+                const dateA = new Date(yearA, monthA - 1, dayA, ...a.time.split(':'));
+                const dateB = new Date(yearB, monthB - 1, dayB, ...b.time.split(':'));
                 return dateA - dateB;
             });
 
             list.innerHTML = sortedSchedule.map(lesson => {
                 const student = students.find(s => s.id === lesson.studentId);
-                const lessonDate = new Date(lesson.date);
+                // Parse date properly in local timezone
+                const [year, month, day] = lesson.date.split('-');
+                const lessonDate = new Date(year, month - 1, day);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const isPast = lessonDate < today;
@@ -1333,7 +1338,7 @@ try {
                         <div class="flex-between">
                             <div class="flex-1">
                                 <h3>${student ? student.name : 'Unknown Student'}</h3>
-                                <p class="text-gray-700">${new Date(lesson.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${lesson.time}</p>
+                                <p class="text-gray-700">${lessonDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at ${lesson.time}</p>
                                 <p class="text-gray-600 text-sm">${lesson.duration} min • ${lesson.type} • ${lesson.recurring}${lesson.location ? ` • ${lesson.location}` : ''}</p>
                                 ${student && student.parentPhone ? `<p class="text-sm text-gray-600 mt-1">Contact: ${student.parentPhone}</p>` : ''}
                             </div>
